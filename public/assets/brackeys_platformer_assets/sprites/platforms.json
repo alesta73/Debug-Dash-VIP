@@ -1,0 +1,36 @@
+{
+  "frames": {
+    "platform_green_short": {
+      "frame": { "x": 0, "y": 0, "w": 16, "h": 9 }
+    },
+    "platform_green_long": {
+      "frame": { "x": 16, "y": 0, "w": 32, "h": 9 }
+    },
+
+    "platform_brown_short": {
+      "frame": { "x": 0, "y": 16, "w": 16, "h": 9 }
+    },
+    "platform_brown_long": {
+      "frame": { "x": 16, "y": 16, "w": 32, "h": 9 }
+    },
+
+    "platform_yellow_short": {
+      "frame": { "x": 0, "y": 32, "w": 16, "h": 9 }
+    },
+    "platform_yellow_long": {
+      "frame": { "x": 16, "y": 32, "w": 32, "h": 9 }
+    },
+
+    "platform_blue_short": {
+      "frame": { "x": 0, "y": 48, "w": 16, "h": 9 }
+    },
+    "platform_blue_long": {
+      "frame": { "x": 16, "y": 48, "w": 32, "h": 9 }
+    }
+  },
+  "meta": {
+    "image": "platforms.png",
+    "size": { "w": 64, "h": 64 },
+    "scale": "1"
+  }
+}
