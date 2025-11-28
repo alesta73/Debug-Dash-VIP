@@ -138,7 +138,7 @@ private updateGroundState(delta: number) {
         this.wasGrounded = this.isGrounded;
     }
 
-   public handleDash(delta: number, intent: MovementIntent): boolean {
+public handleDash(delta: number, intent: MovementIntent): boolean {
 
         // --- 1. START DASH ---
         // Trigger if button pressed, dashes available, and we aren't already dashing
@@ -222,9 +222,15 @@ private updateGroundState(delta: number) {
 
             // B. DASH COMPLETED?
             if (this.dashActiveCounter <= 0) {
-                this.endDash(); // Reset gravity, etc.
-                // We return 'false' here so the main update loop continues 
-                // and immediately applies normal ground/air physics this same frame.
+                // BRAKING LOGIC: 
+                // If player is NOT pressing any directional keys, trigger the smooth brake
+                if (intent.x === 0 && intent.y === 0) {
+                    this.startDashStop();
+                    return true; // Keep blocking the main update loop while braking
+                }
+
+                // Otherwise, end normally (preserve momentum)
+                this.endDash();
                 return false; 
             } 
             
@@ -250,17 +256,63 @@ private updateGroundState(delta: number) {
             return true; // Still dashing, stop main update loop
         }
 
-        return false; // Not dashing at all
+        // --- 4. HANDLE BRAKING PHASE ---
+        if (this.isDashStopping) {
+            // INTERRUPT: If player presses ANY key during the brake, cancel it immediately
+            if (intent.x !== 0 || intent.y !== 0 || intent.jumpJustPressed || intent.dashJustPressed) {
+                this.endDash(); // Cancels tween, enables gravity
+                return false;   // Return to main loop to process the input immediately
+            }
+            
+            return true; // Still tweening, block physics
+        }
+
+         return false; // Not dashing at all
     }
 
-    // Helper method to keep things clean
+    // --- HELPER METHODS ---
+
+    private startDashStop() {
+        this.isDashStopping = true;
+        
+        // Ensure gravity stays OFF during the brake
+        if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
+             this.gameObject.body.allowGravity = false;
+        }
+
+        // Tween velocity to 0 over 150ms
+        this.stoppingTween = this.scene.tweens.add({
+            targets: this.gameObject.body!.velocity,
+            x: 0,
+            y: 0,
+            duration: 150, 
+            ease: 'Cubic.easeIn' ,
+            onComplete: () => {
+                // When tween finishes, resume normal physics
+                this.endDash();
+            }
+        });
+    }
+
     private endDash() {
+        // 1. Reset Braking State
+        this.isDashStopping = false;
+        if (this.stoppingTween) {
+            this.stoppingTween.stop(); // Stop tween if interrupted
+            this.stoppingTween = null;
+        }
+
+        // 2. Reset Dash Timers
         this.dashFreezeCounter = 0;
         this.dashActiveCounter = 0;
+
+        // 3. Re-enable Gravity
         if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
             this.gameObject.body.allowGravity = true;
         }
     }
+
+    
 
     // Updates movement based on Intent, called every frame
     public handleHorizontalMovement(intent: MovementIntent) {
