@@ -35,6 +35,9 @@ export class MovementComponent {
     private dashActiveTime: number = 167;
     private dashRefillTime: number = 167;
 
+    // New state for braking
+    private isDashStopping: boolean = false;
+    private stoppingTween: Phaser.Tweens.Tween | null = null;
 
     // Dash State
     private dashFreezeCounter: number = 0;
@@ -135,90 +138,122 @@ private updateGroundState(delta: number) {
         this.wasGrounded = this.isGrounded;
     }
 
-    public handleDash(delta: number, intent: MovementIntent) {
-        // Start Dash: 
+   public handleDash(delta: number, intent: MovementIntent): boolean {
+
+        // --- 1. START DASH ---
+        // Trigger if button pressed, dashes available, and we aren't already dashing
         if (intent.dashJustPressed && this.dashesAvailable > 0 && this.dashActiveCounter <= 0 && this.dashFreezeCounter <= 0) {
             this.dashesAvailable--;
-
-            //Freeze
+            
+            // Start the Freeze Timer (4 Frames / ~67ms)
             this.dashFreezeCounter = this.dashFreezeTime;
-
-            if (intent.x !== 0 || intent.y !== 0) { //om intent visar vänster, höger, upp eller ner
-                this.dashDirection.set(intent.x, intent.y).normalize(); //sätter dashDirection åt det håll intent säger, normalize tar bort 41% movementspeed bugg. 
+            
+            // Calculate direction immediately
+            if (intent.x !== 0 || intent.y !== 0) {
+                this.dashDirection.set(intent.x, intent.y).normalize();
             } else {
                 this.dashDirection.set(this.facingDir, 0).normalize();
             }
-            return true;
+
+            // Setup Physics for the Dash (Run ONCE)
+            if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
+                this.gameObject.body.allowGravity = false;
+                this.gameObject.setDragX(0); // Remove drag so we don't fight physics
+            }
+
+            // Emit Event (Run ONCE) - Clears the Dash Buffer in Player.ts
+            this.events.emit('dash'); 
+            
+            return true; // Stop the main update loop
         }
 
-        //Handle freeze phase (4 frames)
+        // --- 2. HANDLE FREEZE PHASE (4 Frames / ~67ms) ---
         if (this.dashFreezeCounter > 0) {
             this.dashFreezeCounter -= delta;
 
-            //frys player i 4 frames
+            // Lock player in place
             this.gameObject.setVelocityX(0);
             this.gameObject.setVelocityY(0);
+            
+            // Ensure gravity/drag stay off (safety check)
             if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
-                this.gameObject.setDragX(0);
                 this.gameObject.body.allowGravity = false;
+                this.gameObject.setDragX(0);
             }
 
-            //om freeze tagit slut, starta dash
+            // Transition: Freeze ended? Start moving!
             if (this.dashFreezeCounter <= 0) {
-                this.dashActiveCounter = this.dashActiveTime; //starta movement timer
-
+                this.dashActiveCounter = this.dashActiveTime; // Start movement timer (10 Frames)
+                
+                // Apply the velocity NOW
                 this.gameObject.setVelocityX(this.dashDirection.x * this.dashSpeed);
                 this.gameObject.setVelocityY(this.dashDirection.y * this.dashSpeed);
             }
-            return true;
+            
+            return true; // Stop the main update loop
         }
 
-
-        //handle movement phase: 11 frames
+        // --- 3. HANDLE ACTIVE PHASE (10 Frames / ~167ms) ---
         if (this.dashActiveCounter > 0) {
             this.dashActiveCounter -= delta;
 
-            //super/hyperdash logik
+            // A. SUPER DASH / HYPERDASH (Jump Interrupt)
+            // If jump is buffered (intent.jumpJustPressed) and we have jumps left...
             if (intent.jumpJustPressed && this.jumpsAvailable > 0) {
-                this.endDash();
-                //applicera speed buff
-                if (this.facingDir === 1) this.gameObject.setVelocityX(260);
-                else this.gameObject.setVelocityX(-260);
-                this.gameObject.setVelocityY(-this.config.jumpStrength);
-                this.events.emit('jump');
+                this.endDash(); // Helper to reset state/gravity
 
+                // Apply Super Boost (Momentum)
+                if (this.facingDir === 1) {
+                    this.gameObject.setVelocityX(260); // Adjust this value for "Super" feel
+                } else {
+                    this.gameObject.setVelocityX(-260);
+                }
+
+                // Apply Jump Force
+                this.gameObject.setVelocityY(-this.config.jumpStrength);
+                
+                // Update State
+                this.events.emit('jump'); // Emits jump event (clears jump buffer)
                 this.jumpsAvailable--;
                 this.coyoteTimeCounter = 0;
-                return true;
+                
+                return true; // Stop loop (we are now jumping, not dashing)
             }
 
-            //End of dash
+            // B. DASH COMPLETED?
             if (this.dashActiveCounter <= 0) {
-                this.endDash();
-            } else {
-                const steeringWindow = this.dashActiveTime * 0.3;
-                if (this.dashActiveCounter < steeringWindow) {
-                    const steerFactor = 0.15; // How strong the steering is (0.0 to 1.0)
-                    const body = this.gameObject.body as Phaser.Physics.Arcade.Body;
+                this.endDash(); // Reset gravity, etc.
+                // We return 'false' here so the main update loop continues 
+                // and immediately applies normal ground/air physics this same frame.
+                return false; 
+            } 
+            
+            // C. STEERING (Late Dash Control)
+            // Allow slight influence on trajectory at the end of the dash
+            const steeringWindow = this.dashActiveTime * 0.3;
+            if (this.dashActiveCounter < steeringWindow) {
+                const steerFactor = 0.15;
+                const body = this.gameObject.body as Phaser.Physics.Arcade.Body;
 
-                    if (body) {
-                        // Blend current velocity towards intent
-                        if (intent.x !== 0) {
-                            const targetX = intent.x * this.dashSpeed;
-                            body.velocity.x = Phaser.Math.Linear(body.velocity.x, targetX, steerFactor);
-                        }
-                        if (intent.y !== 0) {
-                            const targetY = intent.y * this.dashSpeed;
-                            body.velocity.y = Phaser.Math.Linear(body.velocity.y, targetY, steerFactor);
-                        }
+                if (body) {
+                    if (intent.x !== 0) {
+                        const targetX = intent.x * this.dashSpeed;
+                        body.velocity.x = Phaser.Math.Linear(body.velocity.x, targetX, steerFactor);
+                    }
+                    if (intent.y !== 0) {
+                        const targetY = intent.y * this.dashSpeed;
+                        body.velocity.y = Phaser.Math.Linear(body.velocity.y, targetY, steerFactor);
                     }
                 }
-                return true;
             }
+
+            return true; // Still dashing, stop main update loop
         }
-        return false;
+
+        return false; // Not dashing at all
     }
 
+    // Helper method to keep things clean
     private endDash() {
         this.dashFreezeCounter = 0;
         this.dashActiveCounter = 0;

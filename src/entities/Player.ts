@@ -9,28 +9,36 @@ export class Player implements IMovableBody {
     public sprite: Phaser.Physics.Arcade.Sprite;
     public movement: MovementComponent;
     private inputManager: InputManager;
+    private jumpBufferTimer: number = 0;
+    private dashBufferTimer: number = 0;
+    private readonly BUFFER_WINDOW: number = 83;
 
-    constructor(scene: Phaser.Scene, x: number, y: number, inputManager: InputManager){
+    constructor(scene: Phaser.Scene, x: number, y: number, inputManager: InputManager) {
         // this.sprite = scene.physics.add.sprite(x, y, 'knight');
         this.sprite = scene.physics.add.sprite(x, y, 'player');
         this.sprite.setCollideWorldBounds(true);
 
         this.inputManager = inputManager;
-        
+
         // Initialize the movement component
         // We pass 'this' because Player now satisfies the IMovableBody interface
         this.movement = new MovementComponent(scene, this, {
-            speed: 90, 
+            speed: 90,
             jumpStrength: 275,
             jumpCutoff: 0.8,
             dashSpeed: 240,
             dashDuration: 150
         });
 
-     // ... inside Player constructor ...
+        // ... inside Player constructor ...
 
         this.movement.events.on('jump', () => {
             this.sprite.anims.play('jump_anim', true);
+            this.jumpBufferTimer = 0; // <--- CONSUME BUFFER
+        });
+
+        this.movement.events.on('dash', () => {
+            this.dashBufferTimer = 0; // <--- CONSUME BUFFER
         });
 
         this.movement.events.on('move', () => {
@@ -42,11 +50,11 @@ export class Player implements IMovableBody {
 
         this.movement.events.on('idle', () => {
             // FIX: Only switch to idle if we are actually on the ground
-          if (this.body?.onFloor() && this.body.velocity.y >= 0) {
+            if (this.body?.onFloor() && this.body.velocity.y >= 0) {
                 this.sprite.anims.play('idle_anim', true);
             }
         });
-        
+
         // Optional: Handle the new fall event if you want a fall animation
         // this.movement.events.on('fall', () => { ... });
     }
@@ -54,7 +62,7 @@ export class Player implements IMovableBody {
     // =================================================================
     // IMovableBody Implementation (The Adapter Methods)
     // =================================================================
-    
+
     // Expose the underlying physics body to the component safely
     get body(): Phaser.Physics.Arcade.Body | null {
         return this.sprite.body instanceof Phaser.Physics.Arcade.Body ? this.sprite.body : null;
@@ -91,37 +99,43 @@ export class Player implements IMovableBody {
     // =================================================================
 
     // Updates the player's state each frame
-    update(time: number, delta: number){
+    update(time: number, delta: number) {
+        // ... inside update(time, delta) ...
 
-        // console.log(delta)
-        // 1. Get Raw Input (Specific to Keyboard/InputManager)
-        const moveInputHorizontal = this.inputManager.getHorizontalInput(); // { left, right }
-        const moveInputVertical = this.inputManager.getVerticalInput(); // { up, down }
-
-        const jumpInput = this.inputManager.getJumpInput();  
+        // 1. Get Raw Input
+        const jumpInput = this.inputManager.getJumpInput();
         const dashInput = this.inputManager.getDashInput();
-       // { justDown, isDown, justUp }
+        const moveInputHorizontal = this.inputManager.getHorizontalInput();
+        const moveInputVertical = this.inputManager.getVerticalInput();
 
-        // 2. Convert to Neutral "Intent" (The Translator Step)
-        let dirX = 0;
-        if (moveInputHorizontal.left) dirX = -1;
-        if (moveInputHorizontal.right) dirX = 1;
+        // 2. Update Buffers
+        // If pressed this frame, set timer to full window. Otherwise count down.
+        if (jumpInput.justDown) {
+            this.jumpBufferTimer = this.BUFFER_WINDOW;
+        } else {
+            this.jumpBufferTimer -= delta;
+        }
 
-        let dirY = 0;
-        if (moveInputVertical.up) dirY = -1;
-        if (moveInputVertical.down) dirY = 1;
+        if (dashInput.justDown) {
+            this.dashBufferTimer = this.BUFFER_WINDOW;
+        } else {
+            this.dashBufferTimer -= delta;
+        }
 
-
+        // 3. Create Intent using Buffer
+        // Intent is valid if: Buffer is active (> 0) AND button is still held
         const intent: MovementIntent = {
-            x: dirX,
-            y: dirY,
+            x: (moveInputHorizontal.right ? 1 : 0) - (moveInputHorizontal.left ? 1 : 0),
+            y: (moveInputVertical.down ? 1 : 0) - (moveInputVertical.up ? 1 : 0),
             jump: jumpInput.isDown,
-            jumpJustPressed: jumpInput.justDown,
+            // BUFFERED CHECK:
+            jumpJustPressed: this.jumpBufferTimer > 0 && jumpInput.isDown,
             dash: dashInput.isDown,
-            dashJustPressed: dashInput.justDown,
+            // BUFFERED CHECK:
+            dashJustPressed: this.dashBufferTimer > 0 && dashInput.isDown,
         };
 
-        // 3. Pass Intent to the System
+        // 4. Pass Intent to the System
         this.movement.update(delta, intent);
     }
 }
