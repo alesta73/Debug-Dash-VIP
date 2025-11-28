@@ -31,7 +31,7 @@ export class MovementComponent {
 
     // Dash Config(från frames til ms)
     private dashSpeed: number;
-    private dashFreezeTime: number = 67;
+    private dashFreezeTime: number = 32;
     private dashActiveTime: number = 167;
     private dashRefillTime: number = 167;
 
@@ -285,7 +285,7 @@ public handleDash(delta: number, intent: MovementIntent): boolean {
             targets: this.gameObject.body!.velocity,
             x: 0,
             y: 0,
-            duration: 150, 
+            duration: 50, 
             ease: 'Cubic.easeIn' ,
             onComplete: () => {
                 // When tween finishes, resume normal physics
