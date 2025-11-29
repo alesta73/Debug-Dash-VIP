@@ -55,6 +55,10 @@ export class Zombie implements IMovableBody{
         return this;
     }
 
+    get flipX(): boolean {
+        return this.sprite.flipX;
+    }
+
     
     update( time: number, delta: number){
     

@@ -2,12 +2,14 @@ import Phaser from "phaser";
 import { MovementComponent } from "../components/MovementComponent";
 import { InputManager } from "../services/InputManager";
 import type { IMovableBody, MovementIntent } from "../types";
+import { DashComponent } from "../components/DashComponent";
 
 // Represents the player character in the game
 // Acts as an Adapter: Implements IMovableBody to bridge Phaser Sprite <-> MovementComponent
 export class Player implements IMovableBody {
     public sprite: Phaser.Physics.Arcade.Sprite;
     public movement: MovementComponent;
+    public dash: DashComponent;
     private inputManager: InputManager;
     private jumpBufferTimer: number = 0;
     private dashBufferTimer: number = 0;
@@ -22,15 +24,19 @@ export class Player implements IMovableBody {
 
         // Initialize the movement component
         // We pass 'this' because Player now satisfies the IMovableBody interface
-        this.movement = new MovementComponent(scene, this, {
+      this.movement = new MovementComponent(scene, this, {
             speed: 90,
             jumpStrength: 275,
             jumpCutoff: 0.8,
-            dashSpeed: 240,
-            dashDuration: 150
+            maxDashes: 1,
+            dashRefillTime: 32
         });
 
-        // ... inside Player constructor ...
+        this.dash = new DashComponent(scene, this, this.movement, {
+            speed: 240,
+            duration: 150,
+        });
+
 
         this.movement.events.on('jump', () => {
             this.sprite.anims.play('jump_anim', true);
@@ -94,6 +100,10 @@ export class Player implements IMovableBody {
         return this;
     }
 
+    get flipX(): boolean {
+        return this.sprite.flipX;
+    }
+
     // =================================================================
     // Game Loop
     // =================================================================
@@ -136,6 +146,7 @@ export class Player implements IMovableBody {
         };
 
         // 4. Pass Intent to the System
+        this.dash.update(delta, intent);
         this.movement.update(delta, intent);
     }
 }

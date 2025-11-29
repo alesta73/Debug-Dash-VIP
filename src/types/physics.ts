@@ -18,4 +18,5 @@ export interface IMovableBody {
     setVelocityX(value: number): this;
     setVelocityY(value: number): this;
     setFlipX(value: boolean): this;
+    flipX: boolean;
 }
