@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { IMovableBody } from '../types';
 import type { MovementIntent } from '../types/physics';
+import { ENTITY_STATE_ASSET_KEYS } from '../assets/asset-keys';
 
 export interface MovementConfig {
     speed: number;
@@ -135,19 +136,19 @@ export class MovementComponent {
 
         if (intent.x < 0) {
             this.gameObject.setFlipX(true);
-            if (this.isGrounded) this.events.emit('move', 'left');
+            if (this.isGrounded) this.events.emit(ENTITY_STATE_ASSET_KEYS.RUN, 'left');
         } else if (intent.x > 0) {
             this.gameObject.setFlipX(false);
-            if (this.isGrounded) this.events.emit('move', 'right');
+            if (this.isGrounded) this.events.emit(ENTITY_STATE_ASSET_KEYS.RUN, 'right');
         } else {
-            if (this.isGrounded) this.events.emit('idle');
+            if (this.isGrounded) this.events.emit(ENTITY_STATE_ASSET_KEYS.IDLE);
         }
     }
 
     private handleJump(intent: MovementIntent) {
         if (intent.jumpJustPressed && this.jumpsAvailable > 0) {
             this.gameObject.setVelocityY(-this.config.jumpStrength);
-            this.events.emit('jump');
+            this.events.emit(ENTITY_STATE_ASSET_KEYS.JUMP);
             this.jumpsAvailable--;
             this.coyoteTimeCounter = 0;
         }

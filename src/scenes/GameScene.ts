@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { Player } from '../entities/Player';
-import { Zombie } from '../entities/Zombie';
+import { knight } from '../entities/Knight';
 import { InputManager } from '../services/InputManager';
+import { SKY_BACKGROUND_ASSET_KEYS, TILESET_ASSET_KEYS } from '../assets/asset-keys';
 
 // The main game scene where gameplay occurs
 export default class GameScene extends Phaser.Scene {
     private player!: Player;
-    private zombie!: Zombie;
+    private knight!: knight;
     private platforms!: Phaser.Physics.Arcade.StaticGroup;
     private inputManager!: InputManager;
     fpsText: Phaser.GameObjects.Text;
@@ -18,7 +19,7 @@ export default class GameScene extends Phaser.Scene {
     // Creates game objects and initializes the scene
     create() {
         // Create background
-        this.add.image(400, 300, 'sky');
+        this.add.image(400, 300, SKY_BACKGROUND_ASSET_KEYS.SKY);
 
         // Create platforms
         this.platforms = this.physics.add.staticGroup();
@@ -30,8 +31,8 @@ export default class GameScene extends Phaser.Scene {
         // Create player
         this.player = new Player(this, 10, 10, this.inputManager); 
 
-        // create zombie
-        this.zombie = new Zombie(this, 1, 1)
+        // create knight
+        this.knight = new knight(this, 1, 1)
 
         // Apply physics to the player's sprite
         this.player.sprite.setBounce(0);
@@ -39,15 +40,15 @@ export default class GameScene extends Phaser.Scene {
         this.player.sprite.body?.setSize(12, 18);
         this.player.sprite.body?.setOffset(9, 10);
 
-        this.zombie.sprite.setBounce(0);
-        this.zombie.sprite.setCollideWorldBounds(true);
-        this.zombie.sprite.body?.setSize(12, 18);
-        this.zombie.sprite.body?.setOffset(9, 10);
+        this.knight.sprite.setBounce(0);
+        this.knight.sprite.setCollideWorldBounds(true);
+        this.knight.sprite.body?.setSize(12, 18);
+        this.knight.sprite.body?.setOffset(9, 10);
 
         // Add colliders
         this.physics.add.collider(this.player.sprite, this.platforms);
-        this.physics.add.collider(this.zombie.sprite, this.platforms)
-        this.physics.add.collider(this.zombie.sprite, this.player.sprite);
+        this.physics.add.collider(this.knight.sprite, this.platforms)
+        this.physics.add.collider(this.knight.sprite, this.player.sprite);
 
 
         this.fpsText = this.add.text(10, 10, 'FPS: 60', { fontSize: '10px', color: '#00ff00' }).setScrollFactor(0);
@@ -56,7 +57,7 @@ export default class GameScene extends Phaser.Scene {
     // Updates the scene every frame
     update(time: number, delta: number) {
         this.player.update(time, delta);
-        this.zombie.update(time, delta);
+        this.knight.update(time, delta);
         const currentFPS = Math.round(1000 / delta);
         this.fpsText.setText(`FPS: ${currentFPS}`);
     }
@@ -65,12 +66,12 @@ export default class GameScene extends Phaser.Scene {
     private createPlatforms() {
         let grass_coords = 0;
         for (let i = 0; i <= 21;  i++) {
-            this.platforms.create(grass_coords, 172, 'tileset', 0); 
+            this.platforms.create(grass_coords, 172, TILESET_ASSET_KEYS.TILESET, 0); 
             grass_coords += 15;
         }
         grass_coords = 160;
           for (let i = 160; i <= 320; i++) {
-            this.platforms.create(grass_coords, 200, 'tileset', 0); 
+            this.platforms.create(grass_coords, 200, TILESET_ASSET_KEYS.TILESET, 0); 
             grass_coords += 15;
         }
     }

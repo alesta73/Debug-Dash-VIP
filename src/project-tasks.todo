@@ -1,0 +1,96 @@
+Project setup: 
+    ✔ html with css @done(25-12-08 15:34)
+    ✔ run with local web server @done(25-12-08 15:35)
+    ✔ add phaser library @done(25-12-08 15:35)
+    ✔ create basic phaser 3 instance @done(25-12-08 15:35)
+    ✔ jsconfig @done(25-12-08 15:35)
+
+Game Project Assets: 
+    - Download assets
+    - Create assets with aseprite, tiled
+    ✔ Separation of animations @done(25-12-11 09:28)
+    ✔ Better entity state handling @done(25-12-11 09:28)
+
+Combat system: 
+    - Load game assets
+    - Create animations
+    - handle player input
+    - create enemy attack move list
+    - code optimization - move logic to components
+    - health
+    - enemy components
+    - add basic attack logic
+    - taking damage and enemy knockout
+    - battle state machine (possibly redundant) 
+        - what is finite state machine
+        - review battle states
+        - implement states
+        - add item
+    - battle scene polish
+        - enemy animation
+        - attack animation
+
+World scene:
+    - load level background
+    ✔ create player @done(25-12-08 15:44)
+    - handle player input
+    - camera movement
+    - handle gravity based movement
+    - handle collisions
+    - add enemy spawn logic
+
+Level development with tiled: 
+    - basic level design concepts
+    - collision layer
+    - add custom types to tiled
+    - add game objects
+    - add npcs
+    - exporting level images and json
+
+World scene part 2: 
+    - interactive game objects
+    - dialogue ui component
+    - add npcs
+    - npc dialogue
+    - npc movement
+
+Title screen: 
+    - create basic title screen
+    - add options menu
+    - save & loading options
+    - connecting option data to game (possibly redundant)
+
+Tools part 1:
+    - using tweakpane for testing
+        - positioning game objects
+        - enemy attacks
+        - animations
+
+Systems: 
+    - saving & loading data
+    - inventory
+    - picking up items
+    - viewing enemies (possibly redundant)
+    - buildings
+
+Future content: 
+    - Cutscenes
+    - in game events and tracking
+    - shops
+
+
+
+
+    
+
+    
+Test:
+    ✔ task name @started(25-12-08 15:53) @done(25-12-08 15:53) @lasted(37s)
+    ✘ task 2 @cancelled(25-12-08 15:53)
+
+
+Testing: 
+    ✘ Cancel = alt + c  @cancelled(25-12-08 15:32)
+    ✔ Done = alt + D @done(25-12-08 15:32)
+    - Start = alt + s @started(25-12-08 15:33)
+    - (CRITICAL) Fix bug

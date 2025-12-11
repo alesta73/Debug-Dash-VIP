@@ -3,6 +3,7 @@ import { MovementComponent } from "../components/MovementComponent";
 import { InputManager } from "../services/InputManager";
 import type { IMovableBody, MovementIntent } from "../types";
 import { DashComponent } from "../components/DashComponent";
+import { ENTITY_STATE_ASSET_KEYS, PLAYER_ASSET_KEYS } from "../assets/asset-keys";
 
 // Represents the player character in the game
 // Acts as an Adapter: Implements IMovableBody to bridge Phaser Sprite <-> MovementComponent
@@ -17,7 +18,7 @@ export class Player implements IMovableBody {
 
     constructor(scene: Phaser.Scene, x: number, y: number, inputManager: InputManager) {
         // this.sprite = scene.physics.add.sprite(x, y, 'knight');
-        this.sprite = scene.physics.add.sprite(x, y, 'player');
+        this.sprite = scene.physics.add.sprite(x, y, PLAYER_ASSET_KEYS.PLAYER);
         this.sprite.setCollideWorldBounds(true);
 
         this.inputManager = inputManager;
@@ -38,8 +39,8 @@ export class Player implements IMovableBody {
         });
 
 
-        this.movement.events.on('jump', () => {
-            this.sprite.anims.play('jump_anim', true);
+        this.movement.events.on(ENTITY_STATE_ASSET_KEYS.JUMP, () => {
+            this.sprite.anims.play(PLAYER_ASSET_KEYS.PLAYER_JUMP_ANIM, true);
             this.jumpBufferTimer = 0; // <--- CONSUME BUFFER
         });
 
@@ -47,17 +48,17 @@ export class Player implements IMovableBody {
             this.dashBufferTimer = 0; // <--- CONSUME BUFFER
         });
 
-        this.movement.events.on('move', () => {
+        this.movement.events.on(ENTITY_STATE_ASSET_KEYS.RUN, () => {
             // FIX: Only switch to run if we are actually on the ground
             if (this.body?.onFloor() && this.body.velocity.y >= 0) {
-                this.sprite.anims.play('run_anim', true);
+                this.sprite.anims.play(PLAYER_ASSET_KEYS.PLAYER_RUN_ANIM, true);
             }
         });
 
-        this.movement.events.on('idle', () => {
+        this.movement.events.on(ENTITY_STATE_ASSET_KEYS.IDLE, () => {
             // FIX: Only switch to idle if we are actually on the ground
             if (this.body?.onFloor() && this.body.velocity.y >= 0) {
-                this.sprite.anims.play('idle_anim', true);
+                this.sprite.anims.play(PLAYER_ASSET_KEYS.PLAYER_IDLE_ANIM, true);
             }
         });
 

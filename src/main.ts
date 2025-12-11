@@ -1,11 +1,11 @@
-import Phaser from "phaser";
-
 // Import scenes for use in the game
+
 import PreloadScene from "./scenes/PreloadScene";
 import GameScene from "./scenes/GameScene";
 
 // Phaser game configuration
 var config: Phaser.Types.Core.GameConfig = {
+  parent: 'game-container',
   type: Phaser.AUTO, // Automatically choose the rendering type
   width: 320, height: 180, 
   // width: 1920, height: 1080,
@@ -38,4 +38,5 @@ var config: Phaser.Types.Core.GameConfig = {
 };
 
 // Create a new Phaser game instance
-var game = new Phaser.Game(config);
+const game = new Phaser.Game(config);
+

@@ -1,40 +1,37 @@
 import Phaser from 'phaser';
 import { AnimationManager } from '../services/AnimationManager';
+import { SCENE_KEYS } from './sceneKeys';
+import { KNIGHT_ASSET_KEYS, PLAYER_ASSET_KEYS, SKY_BACKGROUND_ASSET_KEYS, TILESET_ASSET_KEYS } from '../assets/asset-keys';
 
-// This scene is responsible for preloading all game assets.
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
-        super('PreloadScene');
+        super(SCENE_KEYS.PRELOAD_SCENE);
     }
-
-    // Preloads all necessary assets for the game.
     preload() {
-        // Load images and spritesheets
-        this.load.image('sky', 'assets/sky.png');
-        this.load.image('platform', 'assets/platform.png');
+        const brackeys_asset_path = 'assets/brackeys_platformer_assets/';
 
-        this.load.spritesheet('tileset', 'assets/brackeys_platformer_assets/sprites/tilesett.png', {
+        this.load.image(
+            SKY_BACKGROUND_ASSET_KEYS.SKY, 'assets/sky.png');
+
+        this.load.spritesheet(TILESET_ASSET_KEYS.TILESET, `${brackeys_asset_path}/sprites/tilesett.png`, {
             frameWidth: 16,
             frameHeight: 16
         });
 
-
-        this.load.spritesheet('knight', 'assets/brackeys_platformer_assets/sprites/knight.png', {
+        this.load.spritesheet(KNIGHT_ASSET_KEYS.KNIGHT, `${brackeys_asset_path}/sprites/knight.png`, {
             frameWidth: 32, frameHeight: 32
         });
 
-        this.load.spritesheet('player', 'assets/brackeys_platformer_assets/sprites/player.png', {
+        this.load.spritesheet(PLAYER_ASSET_KEYS.PLAYER, `${brackeys_asset_path}/sprites/player.png`, {
             frameWidth: 32, frameHeight: 32
         });
     }
 
     // Creates animations and starts the main game scene.
     create() {
-
-        // Create animations for the player
         AnimationManager.createPlayerAnims(this.anims);
+        AnimationManager.createKnightAnims(this.anims);
 
-        // Start the main game scene
         this.scene.start('GameScene');
     }
 }

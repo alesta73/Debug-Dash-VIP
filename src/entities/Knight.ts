@@ -2,30 +2,31 @@ import Phaser from "phaser";
 
 import { MovementComponent } from "../components/MovementComponent";
 import type { IMovableBody, MovementIntent } from "../types"; 
+import { ENTITY_STATE_ASSET_KEYS, KNIGHT_ASSET_KEYS } from "../assets/asset-keys";
 
-export class Zombie implements IMovableBody{
+export class knight implements IMovableBody{
     public sprite: Phaser.Physics.Arcade.Sprite;
     public movement: MovementComponent;
     private moveTimer: number = 0;
 
     constructor(scene: Phaser.Scene, x: number, y: number){
-        this.sprite = scene.physics.add.sprite(x, y, 'knight');
+        this.sprite = scene.physics.add.sprite(x, y, KNIGHT_ASSET_KEYS.KNIGHT);
         this.movement = new MovementComponent(scene, this, {
-            speed: 100,
+            speed: 50 ,
             jumpStrength: 300,
             jumpCutoff: 0.8
         });
 
-          this.movement.events.on('jump', () => {
-            this.sprite.anims.play('jump_anim', true);
+          this.movement.events.on(ENTITY_STATE_ASSET_KEYS.JUMP, () => {
+            this.sprite.anims.play(KNIGHT_ASSET_KEYS.KNIGHT_JUMP_ANIM, true);
         });
 
-        this.movement.events.on('move', () => {
-            this.sprite.anims.play('run_anim', true);
+        this.movement.events.on(ENTITY_STATE_ASSET_KEYS.RUN, () => {
+            this.sprite.anims.play(KNIGHT_ASSET_KEYS.KNIGHT_RUN_ANIM, true);
         });
 
-        this.movement.events.on('idle', () => {
-            this.sprite.anims.play('idle_anim', true);
+        this.movement.events.on(ENTITY_STATE_ASSET_KEYS.IDLE, () => {
+            this.sprite.anims.play(KNIGHT_ASSET_KEYS.KNIGHT_IDLE_ANIM, true);
         });
     }
 
