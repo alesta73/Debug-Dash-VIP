@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../entities/Player';
 import { knight } from '../entities/Knight';
 import { InputManager } from '../services/InputManager';
-import { SKY_BACKGROUND_ASSET_KEYS, TILESET_ASSET_KEYS } from '../assets/asset-keys';
+import { AMOK_TILESET_ASSET_KEYS, SKY_BACKGROUND_ASSET_KEYS, TILESET_ASSET_KEYS } from '../assets/asset-keys';
 
 // The main game scene where gameplay occurs
 export default class GameScene extends Phaser.Scene {
@@ -37,8 +37,10 @@ export default class GameScene extends Phaser.Scene {
         // Apply physics to the player's sprite
         this.player.sprite.setBounce(0);
         this.player.sprite.setCollideWorldBounds(true);
-        this.player.sprite.body?.setSize(12, 18);
-        this.player.sprite.body?.setOffset(9, 10);
+        // this.player.sprite.body?.setSize(12, 18);
+        // this.player.sprite.body?.setOffset(9, 10);
+        this.player.sprite.body?.setSize(16, 16);
+        this.player.sprite.body?.setOffset(0, 0);
 
         this.knight.sprite.setBounce(0);
         this.knight.sprite.setCollideWorldBounds(true);
@@ -64,15 +66,25 @@ export default class GameScene extends Phaser.Scene {
         
     // Creates platform groups
     private createPlatforms() {
-        let grass_coords = 0;
-        for (let i = 0; i <= 21;  i++) {
-            this.platforms.create(grass_coords, 172, TILESET_ASSET_KEYS.TILESET, 0); 
-            grass_coords += 15;
+        // let grass_coords = 0;
+        // for (let i = 0; i <= 21;  i++) {
+        //     this.platforms.create(grass_coords, 172, TILESET_ASSET_KEYS.TILESET, 0); 
+        //     grass_coords += 15;
+        // }
+
+         let brick_cords = 0; 
+        for (let i = 0; i <= 10;  i++) {
+            this.platforms.create(brick_cords, 172, AMOK_TILESET_ASSET_KEYS.BRICK, 'moss1'); 
+            brick_cords += 16;
+            this.platforms.create(brick_cords, 172, AMOK_TILESET_ASSET_KEYS.BRICK, 'moss2'); 
+            brick_cords += 16;
+            this.platforms.create(brick_cords, 172, AMOK_TILESET_ASSET_KEYS.BRICK, 'moss3'); 
+            brick_cords += 16;
         }
-        grass_coords = 160;
-          for (let i = 160; i <= 320; i++) {
-            this.platforms.create(grass_coords, 200, TILESET_ASSET_KEYS.TILESET, 0); 
-            grass_coords += 15;
-        }
+        // grass_coords = 160;
+        //   for (let i = 160; i <= 320; i++) {
+        //     this.platforms.create(grass_coords, 200, TILESET_ASSET_KEYS.TILESET, 0); 
+        //     grass_coords += 15;
+        // }
     }
 }

@@ -31,12 +31,12 @@ Combat system:
         - attack animation
 
 World scene:
-    - load level background
+    ✔ load level background @done(25-12-11 09:52)
     ✔ create player @done(25-12-08 15:44)
     - handle player input
     - camera movement
-    - handle gravity based movement
-    - handle collisions
+    ✔ handle gravity based movement @done(25-12-11 09:52)
+    ✔ handle collisions @done(25-12-11 09:52)
     - add enemy spawn logic
 
 Level development with tiled: 
@@ -77,17 +77,6 @@ Future content:
     - Cutscenes
     - in game events and tracking
     - shops
-
-
-
-
-    
-
-    
-Test:
-    ✔ task name @started(25-12-08 15:53) @done(25-12-08 15:53) @lasted(37s)
-    ✘ task 2 @cancelled(25-12-08 15:53)
-
 
 Testing: 
     ✘ Cancel = alt + c  @cancelled(25-12-08 15:32)

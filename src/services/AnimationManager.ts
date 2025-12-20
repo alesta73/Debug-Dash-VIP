@@ -39,7 +39,7 @@ export class AnimationManager {
                 key: PLAYER_ASSET_KEYS.PLAYER_IDLE_ANIM,
                 start: 0,
                 end: 10,
-                frameRate: 12,
+                frameRate: 10,
                 repeat: -1
             },
             // Add run, jump, attack here easily...

@@ -31,3 +31,8 @@ export const ENTITY_STATE_ASSET_KEYS = Object.freeze({
     RUN: 'RUN',
     JUMP: 'JUMP',
 });
+
+export const AMOK_TILESET_ASSET_KEYS = Object.freeze({
+    BRICK: 'BRICK',
+    MOSSY_BRICK: 'MOSSY_BRICK',
+})
