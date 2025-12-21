@@ -39,8 +39,8 @@ export default class GameScene extends Phaser.Scene {
         this.player.sprite.setCollideWorldBounds(true);
         // this.player.sprite.body?.setSize(12, 18);
         // this.player.sprite.body?.setOffset(9, 10);
-        this.player.sprite.body?.setSize(16, 16);
-        this.player.sprite.body?.setOffset(0, 0);
+        this.player.sprite.body?.setSize(9,  16);
+        this.player.sprite.body?.setOffset(3,    0);
 
         this.knight.sprite.setBounce(0);
         this.knight.sprite.setCollideWorldBounds(true);

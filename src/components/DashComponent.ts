@@ -4,7 +4,8 @@ import { MovementComponent } from './MovementComponent';
 
 interface DashConfig {
     speed: number;
-    duration?: number; // Not strictly used if we use Celeste frames, but good for config
+    duration?: number; 
+    ghostInterval?: number; 
 }
 
 export class DashComponent {
@@ -14,14 +15,20 @@ export class DashComponent {
     private config: DashConfig;
 
     // Celeste Config (MS)
-    private dashFreezeTime: number = 33;  // 67 = 4 Frames, 33-34 = 2 frames at 60fps
-    private dashActiveTime: number = 167; // 10 Frames
+    private dashFreezeTime: number = 33;
+    private dashActiveTime: number = 167;
 
     // State Machine
     private dashFreezeCounter: number = 0;
     private dashActiveCounter: number = 0;
     private dashDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2();
     
+    // Visuals: Sandevistan Effect
+    private ghostTimer: number = 0;
+    private readonly DEFAULT_GHOST_INTERVAL: number = 32; 
+    // NEW: Track if we are currently in a Super Dash flight
+    private isSuperDashing: boolean = false; 
+
     // Braking Logic
     private isDashStopping: boolean = false;
     private stoppingTween: Phaser.Tweens.Tween | null = null;
@@ -39,39 +46,51 @@ export class DashComponent {
     public update(delta: number, intent: MovementIntent) {
         
         // 1. START DASH
-        // We use movement.dashesLeft to check resources
         if (intent.dashJustPressed && this.movement.dashesLeft > 0 && this.dashActiveCounter <= 0 && this.dashFreezeCounter <= 0) {
             this.startDash(intent);
         }
 
-        // 2. STATE MACHINE
+        // 2. CHECK LANDING (Reset Super Dash)
+        if (this.isSuperDashing) {
+            const body = this.gameObject.body;
+            // If we touch the ground, the super dash flight is over
+            if (body instanceof Phaser.Physics.Arcade.Body && body.onFloor()) {
+                this.isSuperDashing = false;
+            }
+        }
 
-        // A. FREEZE PHASE (4 Frames)
+        // 3. VISUALS: SANDEVISTAN TRAIL
+        // Apply effect if Dashing OR Super Dashing (but not during freeze frames)
+        if ((this.dashActiveCounter > 0 || this.isSuperDashing) && this.dashFreezeCounter <= 0) {
+            this.handleGhostTrail(delta);
+        }
+
+        // 4. STATE MACHINE
+
+        // A. FREEZE PHASE
         if (this.dashFreezeCounter > 0) {
             this.dashFreezeCounter -= delta;
             
-            // Freeze positions
             this.gameObject.setVelocityX(0);
             this.gameObject.setVelocityY(0);
             if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
                 this.gameObject.body.allowGravity = false;
             }
 
-            // Transition -> Active
             if (this.dashFreezeCounter <= 0) {
                 this.dashActiveCounter = this.dashActiveTime;
                 this.gameObject.setVelocityX(this.dashDirection.x * this.config.speed);
                 this.gameObject.setVelocityY(this.dashDirection.y * this.config.speed);
+                this.ghostTimer = 0; 
             }
             return;
         }
 
-        // B. ACTIVE PHASE (10 Frames)
+        // B. ACTIVE PHASE
         if (this.dashActiveCounter > 0) {
             this.dashActiveCounter -= delta;
 
             // --- SUPER DASH LOGIC ---
-            // If jump is pressed during dash, CANCEL dash and apply Boost
             if (intent.jumpJustPressed && this.movement.jumpsLeft > 0) {
                 this.performSuperDash(intent);
                 return;
@@ -79,7 +98,6 @@ export class DashComponent {
 
             // End of Dash?
             if (this.dashActiveCounter <= 0) {
-                // If no input, brake. Else, carry momentum.
                 if (intent.x === 0 && intent.y === 0) {
                     this.startDashStop();
                 } else {
@@ -91,7 +109,6 @@ export class DashComponent {
 
         // C. BRAKING PHASE
         if (this.isDashStopping) {
-            // Cancel brake if any input
             if (intent.x !== 0 || intent.y !== 0 || intent.jumpJustPressed || intent.dashJustPressed) {
                 this.endDash();
             }
@@ -99,49 +116,80 @@ export class DashComponent {
     }
 
     private startDash(intent: MovementIntent) {
-        this.movement.consumeDash(); // Use resource
-        this.movement.setLock(true); // Disable MovementComponent
-
+        this.isSuperDashing = false; // Reset super dash state on new dash
+        this.movement.consumeDash();
+        this.movement.setLock(true);
         this.dashFreezeCounter = this.dashFreezeTime;
 
-        // Determine Direction
         if (intent.x !== 0 || intent.y !== 0) {
             this.dashDirection.set(intent.x, intent.y).normalize();
         } else {
-            // Use flipX to guess direction if neutral
             const facing = this.gameObject.flipX ? -1 : 1; 
             this.dashDirection.set(facing, 0);
         }
 
-        // Setup Physics
         if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {
             this.gameObject.body.allowGravity = false;
             this.gameObject.setDragX(0);
         }
 
-        this.events.emit('start'); // Emits 'dash' effectively
+        this.events.emit('start');
     }
 
     private performSuperDash(intent: MovementIntent) {
-        this.endDash(); // Unlock movement immediately
+        this.endDash(); // Clears normal dash state/locks
 
-        // 1. Consume Jump Resource
+        this.isSuperDashing = true; // Enable trail persistence
+
         this.movement.consumeJump();
         this.movement.resetCoyote();
 
-        // 2. Apply Super Velocity
         const facing = this.dashDirection.x > 0 ? 1 : -1;
-        
-        // Boost X (260 is the magic number)
         this.gameObject.setVelocityX(facing * 260);
-        // Boost Y (Use normal jump strength)
         this.gameObject.setVelocityY(-this.movement.config.jumpStrength);
 
-        // 3. Prevent double-jump in MovementComponent
-        // We consumed the input here, so we don't want MovementComponent to see it this frame
         intent.jumpJustPressed = false; 
-
         this.movement.events.emit('jump');
+    }
+
+    private handleGhostTrail(delta: number) {
+        this.ghostTimer -= delta;
+        if (this.ghostTimer <= 0) {
+            this.createAfterImage();
+            this.ghostTimer = this.config.ghostInterval ?? this.DEFAULT_GHOST_INTERVAL;
+        }
+    }
+
+    private createAfterImage() {
+        const parent = this.gameObject as any;
+        const parentSprite = parent.sprite as Phaser.Physics.Arcade.Sprite;
+
+        if (!parentSprite || !parentSprite.texture) return;
+
+        const ghost = this.scene.add.image(
+            parentSprite.x, 
+            parentSprite.y, 
+            parentSprite.texture.key, 
+            parentSprite.frame.name
+        );
+        
+        ghost.setFlipX(parentSprite.flipX);
+        ghost.setScale(parentSprite.scaleX, parentSprite.scaleY);
+        ghost.setRotation(parentSprite.rotation);
+        ghost.setTint(0x00FFD0); // Cyberpunk Cyan
+      //  ghost.setTint(0xFF0000); // Red (Sandevistan)
+        ghost.setAlpha(0.4);
+        ghost.setDepth(parentSprite.depth); 
+
+        this.scene.tweens.add({
+            targets: ghost,
+            alpha: 0,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => {
+                ghost.destroy();
+            }
+        });
     }
 
     private startDashStop() {
@@ -172,8 +220,9 @@ export class DashComponent {
 
         this.dashFreezeCounter = 0;
         this.dashActiveCounter = 0;
+        // Do NOT reset isSuperDashing here, as endDash is called 
+        // immediately when performSuperDash starts.
         
-        // Unlock movement and reset gravity
         this.movement.setLock(false);
         
         if (this.gameObject.body instanceof Phaser.Physics.Arcade.Body) {

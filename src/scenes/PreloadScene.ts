@@ -36,7 +36,7 @@ export default class PreloadScene extends Phaser.Scene {
         //     frameWidth: 32, frameHeight: 32
         // });
 
-          this.load.spritesheet(PLAYER_ASSET_KEYS.PLAYER, `${amok_assets}/sprites/amok_player.png`, {
+          this.load.spritesheet(PLAYER_ASSET_KEYS.PLAYER, `${amok_assets}/sprites/amok_player_walk.png`, {
             frameWidth: 16, frameHeight: 16
         });
     }
